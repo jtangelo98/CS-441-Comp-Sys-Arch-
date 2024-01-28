@@ -7,11 +7,13 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     string alphabet;
-    int state_cnt;
+    int state_cnt = 0;
     int start;
-    bool final[] = {false, false, false, false, false};
     int cur;
-    char *s;
+    int i_temp = 0;
+    string temp = "";
+    vector <vector<int>> trans;
+    vector <string> inputStrings;
 
     //check to see if file was passed to program using command line
     if(argc < 2)
@@ -20,8 +22,8 @@ int main(int argc, char* argv[])
     }
  
     //file has been passed, retrieve and open file
-    const char* path = argv[1];
-    ifstream inFile(path);
+    const char* fileName = argv[1];
+    ifstream inFile(fileName);
 
     //check if file could be opened
     if(!inFile.is_open())
@@ -30,45 +32,88 @@ int main(int argc, char* argv[])
     }
 
     //read content of dfa file into variables
+    inFile >> state_cnt;
+    inFile >> start;
+    cur = start;
+    vector <bool> final(state_cnt);
+
+    //initialize vector of final states to false
+    for(int i = 0; i < state_cnt; i++)
+    {
+        final[i] = false;
+        cout << final[i] << endl;
+    }
+
+    //set accept(final) states to true according to input file
+    while(inFile.peek() != '\n')
+    {
+        inFile >> i_temp;
+        cout << i_temp;
+        final.at(i_temp) = true;
+    }
+    cout << endl << endl;
+    for(int i = 0; i < state_cnt; i++)
+    {
+        final[i] = false;
+        cout << final[i] << endl;
+    }
+    //initialize alphabet string
+    while(inFile.peek() != '\n')
+    {
+        alphabet += inFile.get();
+    }
+
+    //initialize transition functions vector
+    for(int i = 0; i < state_cnt + 1; i++)
+    {
+        for (int j = 0; j < alphabet.length(); j++)
+        {
+            if(i == 0)
+            {
+                trans[i].push_back({0}); 
+            }
+            trans[i].push_back({inFile.get()});
+        }
+        
+    }
+
+
+    //get strings to test against DFA
     while(inFile.peek() != EOF)
     {
-        state_cnt << inFile.get() + 1;
-        start << inFile.get();
-        while(inFile.peek() != '\n')
+        //see if empty line
+        if(inFile.peek() == '\n')
         {
-            final[inFile.get()] = true;
+            inputStrings.push_back({"<empty>"});
+            inFile.get();
         }
-        while(inFile.peek() != '\n')
+        else
         {
-           alphabet += inFile.get();
+            inFile >> temp;
+            inputStrings.push_back(temp);
         }
-        vector <vector<int>> trans;
+        
+    }
 
-        for(int i = 0; i < state_cnt + 1; i++)
+    //now that data is gathered, test provided strings against DFA
+    for(int i = 0; i < inputStrings.size(); i++)
+    {
+        for(int j = 0; j < inputStrings[i].length(); j++)
         {
-            for (int j = 0; j < alphabet.length(); j++)
+            while (inputStrings[i] != "<empty>" && cur != 0)
             {
-                trans[i][j] << inFile.get();
+                cur = trans[cur][alphabet.find(inputStrings[i].at(j))];
             }
-            
         }
-    }
-
-
-
-    while (*s != '\0' && cur != 0)
-    {
-        cur = trans[cur][alphabet.find(*s)];
-        s++;
-    }
-
-    if (final[cur])
-    {
-        cout << "\n\ngood\n\n";
-    }
-    else
-    {
-        cout << "\n\nbad\n\n";
+        if (final[cur])
+        {
+            cout << "good  ";
+        }
+        else
+        {
+            cout << "bad   ";
+        }
+        cout << inputStrings[i];
     }
 
     return 0;
